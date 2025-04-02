@@ -1,7 +1,7 @@
 <?php
-require_once __DIR__. 'Router.php';
-require_once __DIR__. 'controllers/AuthController.php';
-require_once __DIR__. 'controllers/CommentController.php';
+require_once __DIR__. '/Router.php';
+require_once __DIR__. '/controllers/AuthController.php';
+require_once __DIR__. '/controllers/CommentController.php';
 
 session_start(); // Start the session
 

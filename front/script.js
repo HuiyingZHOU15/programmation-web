@@ -1,6 +1,36 @@
 // Description: This file contains the JavaScript code for the front-end of the application.
 
-const webServerAddress = "http://localhost:8080";
+const webServerAddress = "http://localhost";
+
+document.getElementById("registerForm").addEventListener("submit", function (e) {
+	e.preventDefault();
+  
+	const data = {
+	  username: document.getElementById("username").value,
+	  email: document.getElementById("email").value,
+	  password: document.getElementById("password").value
+	};
+  
+	fetch("http://localhost:8080/register", {
+	  method: "POST",
+	  headers: {
+		"Content-Type": "application/json"
+	  },
+	  body: JSON.stringify(data)
+	})
+	  .then(res => res.json())
+	  .then(result => {
+		if (result.user_id) {
+		  document.getElementById("registerResult").innerText = "Inscription réussie 🎉";
+		} else {
+		  document.getElementById("registerResult").innerText = "Erreur : " + result.error;
+		}
+	  })
+	  .catch(err => {
+		document.getElementById("registerResult").innerText = "Erreur réseau";
+	  });
+  });
+  
 
 const form = document.getElementById("post-comment");
 // Trigger the getComments function when the form is submitted
@@ -87,17 +117,28 @@ async function getComments() {
  */
 async function displayComments(comments) {
 	
-	// Hints:
 	// 1. Create a new unordered list element (ul)
-	// 2. Loop through each comment in the list
-	// 3. Create a new list item element (li) for each comment
-	// 4. Set the innerHTML of the list item to the comment text
-	// 5. Append the list item to the unordered list
-	// 6. Append the unordered list to the div with id="comment-list"
+	const ul = document.createElement("ul");
 
-	// What functions do you need to use here?
-	// - document.createElement
-	// - document.getElementById
-	// - element.appendChild
-	// - element.innerHTML
+	// 2. Loop through each comment in the list
+	for (let i = 0; i < comments.length; i++) {
+		const comment = comments[i];
+
+		// 3. Create a new list item element (li) for each comment
+		const li = document.createElement("li");
+
+		// 4. Set the innerHTML of the list item to the comment text
+		li.innerHTML = "<strong>" + comment.firstname + " " + comment.lastname + "</strong> : " + comment.message;
+
+		// 5. Append the list item to the unordered list
+		ul.appendChild(li);
+	}
+
+	// 6. Append the unordered list to the div with id="comment-list"
+	const commentListDiv = document.getElementById("comment-list");
+
+	// 清空之前的内容（避免重复添加）
+	commentListDiv.innerHTML = "";
+
+	commentListDiv.appendChild(ul);
 }
