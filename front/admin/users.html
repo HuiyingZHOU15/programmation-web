@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Gestion des utilisateurs</title>
+  <link rel="stylesheet" href="../assets/css/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans&display=swap" rel="stylesheet" />
+  <style>
+    body {
+      font-family: 'Open Sans', sans-serif;
+      margin: 0;
+      padding: 0;
+      background: url('https://images.unsplash.com/photo-1589302168068-964664d93dc0?auto=format&fit=crop&w=1920&q=80') no-repeat center center fixed;
+      background-size: cover;
+      color: #fff;
+    }
+    .overlay {
+      background-color: rgba(0, 0, 0, 0.75);
+      padding: 40px;
+      border-radius: 12px;
+      max-width: 1000px;
+      margin: 60px auto;
+      box-shadow: 0 0 20px rgba(0,0,0,0.5);
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 30px;
+      font-size: 30px;
+      color: #ffcc00;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      background-color: rgba(255, 255, 255, 0.05);
+      color: #fff;
+    }
+    th, td {
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      padding: 10px;
+      text-align: left;
+    }
+    th {
+      background-color: rgba(255, 255, 255, 0.15);
+    }
+    tr:nth-child(even) {
+      background-color: rgba(255, 255, 255, 0.03);
+    }
+    button {
+      margin: 3px;
+      padding: 6px 12px;
+      border: none;
+      border-radius: 5px;
+      background-color: #4caf50;
+      color: white;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    button:hover {
+      background-color: #388e3c;
+    }
+    #message {
+      margin-top: 20px;
+      font-weight: bold;
+      text-align: center;
+      color: #66ff99;
+    }
+    a.back {
+      display: block;
+      margin-top: 30px;
+      text-align: center;
+      color: #ccc;
+      font-size: 16px;
+      text-decoration: none;
+    }
+    a.back:hover {
+      text-decoration: underline;
+      color: #fff;
+    }
+    #logoutButton {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      padding: 10px 20px;
+      background-color: #e74c3c;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <script>
+    const currentUser = JSON.parse(sessionStorage.getItem("user"));
+    if (!currentUser || !currentUser.roles.includes("Admin")) {
+      alert("⛔ Accès refusé. Admin uniquement.");
+      window.location.href = "/front/auth/login.html";
+    }
+  </script>
+
+  <button id="logoutButton">Déconnexion</button>
+
+  <div class="overlay">
+    <h1>👑 Gestion des utilisateurs</h1>
+    <p id="message"></p>
+    <table id="user-table">
+      <thead>
+        <tr>
+          <th>Nom d'utilisateur</th>
+          <th>Rôles</th>
+          <th>Demandes de rôles</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <a href="/front/dashboard.html" class="back">← Retour au tableau de bord</a>
+  </div>
+
+  <script>
+    async function loadUsers() {
+      const res = await fetch("/back/index.php?action=list_users");
+      const users = await res.json();
+      const tbody = document.querySelector("#user-table tbody");
+      tbody.innerHTML = "";
+
+      users.forEach(user => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${user.username}</td>
+          <td>${user.roles.join(', ')}</td>
+          <td>${user.demandeRoles?.join(', ') || "—"}</td>
+          <td>
+            ${user.demandeRoles?.map(role => `
+              <button onclick="validateRole('${user.username}', '${role}')">✅ Valider ${role}</button>
+            `).join('') || ""}
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    async function validateRole(username, role) {
+      const res = await fetch("/back/index.php?action=validate_role", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, role })
+      });
+      const result = await res.json();
+      document.getElementById("message").textContent = result.message;
+      loadUsers();
+    }
+
+    loadUsers();
+  </script>
+
+  <script>
+    document.getElementById("logoutButton").addEventListener("click", () => {
+      sessionStorage.removeItem("user");
+      window.location.href = "/front/auth/login.html";
+    });
+  </script>
+</body>
+</html>

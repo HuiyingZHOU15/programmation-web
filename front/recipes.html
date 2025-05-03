@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Recettes</title>
+  <link rel="stylesheet" href="./assets/css/style.css" />
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+  <style>
+    .grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .recipe-card {
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      padding: 1rem;
+      width: 250px;
+      background-color: #f9f9f9;
+    }
+
+    .filters {
+      margin-bottom: 20px;
+    }
+
+    .filters input[type="text"] {
+      padding: 5px;
+      width: 200px;
+    }
+
+    .filters label {
+      margin-right: 10px;
+    }
+
+    #logoutButton {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      padding: 10px 20px;
+      background-color: #e74c3c;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 🔐 Blocage si non connecté -->
+  <script>
+    const user = JSON.parse(sessionStorage.getItem("user"));
+    if (!user) {
+      alert("⛔ Vous devez être connecté pour voir cette page.");
+      window.location.href = "/front/auth/login.html";
+    }
+  </script>
+
+  <!-- Déconnexion -->
+  <button id="logoutButton">Déconnexion</button>
+
+  <h1>Nos recettes 🍽️</h1>
+
+  <!-- Filtres -->
+  <div class="filters">
+    <input type="text" id="search" placeholder="🔍 Rechercher une recette">
+    <label><input type="checkbox" id="glutenFree"> Sans gluten</label>
+    <label><input type="checkbox" id="vegan"> Vegan</label>
+    <label><input type="checkbox" id="vegetarian"> Végétarien</label>
+  </div>
+
+  <div id="recipes-container" class="grid"></div>
+
+  <script>
+    let allRecipes = [];
+
+    function renderRecipes(recipes) {
+      const container = document.getElementById('recipes-container');
+      container.innerHTML = "";
+
+      if (recipes.length === 0) {
+        container.innerHTML = "<p>Aucune recette ne correspond à votre recherche.</p>";
+        return;
+      }
+
+      recipes.forEach(recipe => {
+        const card = document.createElement('div');
+        card.classList.add('recipe-card');
+
+        card.innerHTML = `
+          <img src="${recipe.imageURL}" alt="${recipe.name}" style="width:100%;height:auto;">
+          <h3>${recipe.nameFR || recipe.name}</h3>
+          <p><strong>Auteur :</strong> ${recipe.Author ?? "Inconnu"}</p>
+          <a href="recipe_details.html?id=${encodeURIComponent(recipe.name)}">Voir</a>
+        `;
+
+        container.appendChild(card);
+      });
+    }
+
+    function applyFilters() {
+      const search = document.getElementById('search').value.toLowerCase();
+      const glutenFree = document.getElementById('glutenFree').checked;
+      const vegan = document.getElementById('vegan').checked;
+      const vegetarian = document.getElementById('vegetarian').checked;
+
+      const filtered = allRecipes.filter(recipe => {
+        if (recipe.validated === false) return false;
+
+        const matchText = recipe.name.toLowerCase().includes(search) || (recipe.nameFR?.toLowerCase().includes(search));
+        const without = recipe.Without ?? [];
+
+        const matchGluten = !glutenFree || without.includes("NoGluten");
+        const matchVegan = !vegan || without.includes("Vegan");
+        const matchVeggie = !vegetarian || without.includes("Vegetarian");
+
+        return matchText && matchGluten && matchVegan && matchVeggie;
+      });
+
+      renderRecipes(filtered);
+    }
+
+    $.ajax({
+      url: '/back/data/recipes.json',
+      method: 'GET',
+      dataType: 'json',
+      success: function (recipes) {
+        allRecipes = recipes;
+        applyFilters();
+      },
+      error: function () {
+        document.getElementById('recipes-container').innerHTML = "<p>Erreur lors du chargement des recettes.</p>";
+      }
+    });
+
+    document.getElementById('search').addEventListener('input', applyFilters);
+    document.getElementById('glutenFree').addEventListener('change', applyFilters);
+    document.getElementById('vegan').addEventListener('change', applyFilters);
+    document.getElementById('vegetarian').addEventListener('change', applyFilters);
+  </script>
+
+  <!-- 🔒 Déconnexion -->
+  <script>
+    document.getElementById("logoutButton").addEventListener("click", () => {
+      sessionStorage.removeItem("user");
+      window.location.href = "/front/auth/login.html";
+    });
+  </script>
+
+</body>
+</html>

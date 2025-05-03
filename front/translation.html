@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Traduction de recette</title>
+  <link rel="stylesheet" href="./assets/css/style.css">
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <style>
+    .row {
+      display: flex;
+      gap: 2rem;
+      align-items: flex-start;
+    }
+
+    .col {
+      width: 50%;
+    }
+
+    textarea, input {
+      width: 100%;
+      padding: 8px;
+      margin-bottom: 10px;
+    }
+
+    #logoutButton {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      padding: 10px 20px;
+      background-color: #e74c3c;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 🔐 Protection d'accès -->
+  <script>
+    const user = JSON.parse(sessionStorage.getItem("user"));
+    if (!user || !user.roles.includes("Traducteur")) {
+      alert("⛔ Accès réservé aux traducteurs.");
+      window.location.href = "/front/auth/login.html";
+    }
+  </script>
+
+  <!-- Bouton de déconnexion -->
+  <button id="logoutButton">Déconnexion</button>
+
+  <h1>Traduire une recette</h1>
+
+  <div id="container"></div>
+  <p id="message"></p>
+
+  <script>
+    function loadRecipeToTranslate() {
+      $.ajax({
+        url: "/back/data/recipes.json",
+        method: "GET",
+        dataType: "json",
+        success: function(recipes) {
+          const recipe = recipes.find(r => !r.nameFR);
+
+          if (!recipe) {
+            $("#container").html("<p>✅ Toutes les recettes sont traduites.</p>");
+            return;
+          }
+
+          const container = document.getElementById("container");
+          container.innerHTML = `
+            <form id="translate-form">
+              <div class="row">
+                <div class="col">
+                  <h3>Texte original</h3>
+                  <label>Nom :</label>
+                  <p>${recipe.name}</p>
+
+                  <label>Ingrédients :</label>
+                  <ul>${(recipe.ingredients ?? []).map(i => `<li>${i.quantity} - ${i.name}</li>`).join('')}</ul>
+
+                  <label>Étapes :</label>
+                  <ol>${(recipe.steps ?? []).map(s => `<li>${s}</li>`).join('')}</ol>
+                </div>
+
+                <div class="col">
+                  <h3>Traduction</h3>
+                  <label>Nom (FR) :</label>
+                  <input type="text" name="nameFR" required>
+
+                  <label>Ingrédients (FR) :</label>
+                  <div id="ingredientsFR">
+                    ${(recipe.ingredients ?? []).map((i, idx) => `
+                      <input type="text" name="ingredientFR-${idx}" placeholder="${i.name}" required>
+                    `).join('')}
+                  </div>
+
+                  <label>Étapes (FR) :</label>
+                  <div id="stepsFR">
+                    ${(recipe.steps ?? []).map((s, idx) => `
+                      <textarea name="stepFR-${idx}" placeholder="Traduction étape ${idx + 1}" required></textarea>
+                    `).join('')}
+                  </div>
+
+                  <br>
+                  <button type="submit">✅ Enregistrer la traduction</button>
+                </div>
+              </div>
+            </form>
+          `;
+
+          $("#translate-form").on("submit", function(e) {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+
+            const nameFR = formData.get("nameFR");
+            const ingredientsFR = [];
+            const stepsFR = [];
+
+            for (let i = 0; i < recipe.ingredients.length; i++) {
+              ingredientsFR.push({
+                quantity: recipe.ingredients[i].quantity,
+                name: formData.get(`ingredientFR-${i}`)
+              });
+            }
+
+            for (let i = 0; i < recipe.steps.length; i++) {
+              stepsFR.push(formData.get(`stepFR-${i}`));
+            }
+
+            const translated = {
+              name: recipe.name,
+              nameFR,
+              ingredientsFR,
+              stepsFR
+            };
+
+            $.ajax({
+              url: "/back/index.php?action=translate_recipe",
+              method: "POST",
+              contentType: "application/json",
+              data: JSON.stringify(translated),
+              success: function(result) {
+                $("#message").text(result.message).css("color", result.success ? "green" : "red");
+                if (result.success) {
+                  setTimeout(() => location.reload(), 1500);
+                }
+              },
+              error: function(xhr) {
+                $("#message").text("Erreur de traduction").css("color", "red");
+              }
+            });
+          });
+        },
+        error: function() {
+          $("#container").html("<p>Erreur de chargement des recettes.</p>");
+        }
+      });
+    }
+
+    loadRecipeToTranslate();
+
+    // 🔒 Déconnexion
+    document.getElementById("logoutButton").addEventListener("click", () => {
+      sessionStorage.removeItem("user");
+      window.location.href = "/front/auth/login.html";
+    });
+  </script>
+<a href="dashboard.html" style="display:block;text-align:center;color:#ccc;margin-top:20px;text-decoration:none;"
+onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#ccc'">
+← Retour au tableau de bord
+</a>
+
+</body>
+</html>

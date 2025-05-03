@@ -1,0 +1,168 @@
+<!DOCTYPE html> 
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Tableau de bord</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <style>
+    body {
+      font-family: 'Open Sans', sans-serif;
+      background: url('https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1950&q=80') no-repeat center center fixed;
+      background-size: cover;
+      color: #fff;
+      margin: 0;
+      padding: 0;
+    }
+    .overlay {
+      background-color: rgba(0, 0, 0, 0.75);
+      padding: 40px;
+      border-radius: 12px;
+      max-width: 1000px;
+      margin: 60px auto;
+      box-shadow: 0 0 20px rgba(0,0,0,0.5);
+    }
+    h1, h2 {
+      text-align: center;
+      color: #ffcc00;
+    }
+    .section {
+      margin-top: 30px;
+    }
+    .module {
+      display: block;
+      margin: 10px auto;
+      padding: 12px 20px;
+      border-radius: 6px;
+      background-color: #4caf50;
+      color: white;
+      text-align: center;
+      font-weight: bold;
+      border: none;
+      cursor: pointer;
+      max-width: 400px;
+    }
+    .module:hover {
+      background-color: #388e3c;
+    }
+    #noPermission {
+      text-align: center;
+      color: red;
+      margin-top: 10px;
+      display: none;
+    }
+    #logoutButton {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      padding: 10px 20px;
+      background-color: #e74c3c;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    #roleMessage {
+      text-align: center;
+      color: #66ff99;
+      margin-top: 10px;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <script>
+    const user = JSON.parse(sessionStorage.getItem("user"));
+    if (!user) {
+      alert("⛔ Vous devez être connecté.");
+      window.location.href = "auth/login.html";
+    }
+  </script>
+
+  <button id="logoutButton">Déconnexion</button>
+
+  <div class="overlay">
+    <h1>👋 Bienvenue, <span id="username"></span> !</h1>
+
+    <div class="section">
+      <h2>Fonctionnalités générales</h2>
+      <button class="module" onclick="handleAccess('recipes', ['Cuisinier', 'Chef', 'Traducteur', 'Admin'])">🍽 Voir les recettes</button>
+    </div>
+
+    <div class="section" id="role-section" style="display: none;">
+      <h2>Gérer mon rôle</h2>
+      <button class="module" onclick="requestRole('Chef')">👨‍🍳 Demander rôle Chef</button>
+      <button class="module" onclick="requestRole('Traducteur')">🌍 Demander rôle Traducteur</button>
+      <p id="roleMessage"></p>
+    </div>
+
+    <div class="section" id="chef-section" style="display: none;">
+      <h2>Espace Chef</h2>
+      <button class="module" onclick="handleAccess('chef/add_recipe', ['Chef'])">➕ Ajouter une recette</button>
+      <button class="module" onclick="handleAccess('chef/my_recipes', ['Chef'])">📋 Mes recettes</button>
+    </div>
+
+    <div class="section" id="traducteur-section" style="display: none;">
+      <h2>Espace Traducteur</h2>
+      <button class="module" onclick="handleAccess('translation', ['Traducteur'])">🌍 Traduire une recette</button>
+    </div>
+
+    <div class="section" id="admin-section" style="display: none;">
+      <h2>Espace Administrateur</h2>
+      <button class="module" onclick="handleAccess('admin/users', ['Admin'])">👥 Gérer les utilisateurs</button>
+      <button class="module" onclick="handleAccess('admin/recipes_validation', ['Admin'])">✅ Valider les recettes</button>
+    </div>
+
+    <p id="noPermission"></p>
+  </div>
+
+  <script>
+    document.getElementById("username").innerText = user.username;
+    const roles = user.roles || [];
+
+    if (roles.includes("Chef")) {
+      document.getElementById("chef-section").style.display = "block";
+    }
+    if (roles.includes("Traducteur")) {
+      document.getElementById("traducteur-section").style.display = "block";
+    }
+    if (roles.includes("Admin")) {
+      document.getElementById("admin-section").style.display = "block";
+    }
+    if (!roles.includes("Admin")) {
+      document.getElementById("role-section").style.display = "block";
+    }
+
+    function handleAccess(page, allowedRoles) {
+      const allowed = allowedRoles.some(role => roles.includes(role));
+      if (allowed) {
+        window.location.href = `/front/${page}.html`;
+      } else {
+        const msg = document.getElementById("noPermission");
+        msg.innerText = "❌ Vous n'avez pas la permission d'accéder à cette section.";
+        msg.style.display = "block";
+        setTimeout(() => { msg.style.display = "none"; }, 2000);
+      }
+    }
+
+    function requestRole(role) {
+      fetch("/back/index.php?action=request_role", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: user.username, role })
+      })
+        .then(res => res.json())
+        .then(result => {
+          const msg = document.getElementById("roleMessage");
+          msg.innerText = result.message;
+          msg.style.display = "block";
+          setTimeout(() => { msg.style.display = "none"; }, 2500);
+        });
+    }
+
+    document.getElementById("logoutButton").addEventListener("click", () => {
+      sessionStorage.removeItem("user");
+      window.location.href = "/front/index.html";
+    });
+  </script>
+</body>
+</html>

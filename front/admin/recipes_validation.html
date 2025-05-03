@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Validation des recettes</title>
+  <link rel="stylesheet" href="../assets/css/style.css" />
+  <style>
+    body {
+      font-family: 'Open Sans', sans-serif;
+      background: #1e1e1e;
+      color: white;
+      margin: 0;
+      padding: 0;
+    }
+
+    .overlay {
+      max-width: 900px;
+      margin: 50px auto;
+      padding: 40px;
+      background-color: rgba(0, 0, 0, 0.8);
+      border-radius: 10px;
+    }
+
+    h1 {
+      text-align: center;
+      color: #ffcc00;
+    }
+
+    .card {
+      background-color: rgba(255, 255, 255, 0.05);
+      padding: 20px;
+      margin-bottom: 20px;
+      border-radius: 8px;
+    }
+
+    img {
+      max-width: 200px;
+      border-radius: 6px;
+    }
+
+    button {
+      margin: 5px;
+      padding: 8px 15px;
+      border: none;
+      border-radius: 5px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .validate {
+      background-color: #4caf50;
+      color: white;
+    }
+
+    .reject {
+      background-color: #e74c3c;
+      color: white;
+    }
+
+    #message {
+      text-align: center;
+      color: #66ff99;
+      font-weight: bold;
+      margin-bottom: 20px;
+    }
+
+    a.back {
+      display: block;
+      text-align: center;
+      color: #ccc;
+      margin-top: 20px;
+    }
+
+    a.back:hover {
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <script>
+    const user = JSON.parse(sessionStorage.getItem("user"));
+    if (!user || !user.roles.includes("Admin")) {
+      document.body.innerHTML = "<p style='text-align:center; color:white;'>⛔ Accès refusé. Admin uniquement.</p>";
+      throw new Error("Accès refusé");
+    }
+  </script>
+
+  <div class="overlay">
+    <h1>📋 Recettes à valider</h1>
+    <p id="message"></p>
+    <div id="container"></div>
+    <a href="/front/dashboard.html" class="back">← Retour au tableau de bord</a>
+  </div>
+
+  <script>
+    async function loadPendingRecipes() {
+      const res = await fetch("/back/data/recipes.json");
+      const recipes = await res.json();
+
+      const container = document.getElementById("container");
+      container.innerHTML = "";
+
+      const pending = recipes.filter(r => r.validated === false);
+
+      if (pending.length === 0) {
+        container.innerHTML = "<p>✅ Aucune recette à valider.</p>";
+        return;
+      }
+
+      pending.forEach(recipe => {
+        const div = document.createElement("div");
+        div.className = "card";
+        div.innerHTML = `
+          <h3>${recipe.name}</h3>
+          <p><strong>Auteur :</strong> ${recipe.Author ?? "Inconnu"}</p>
+          <img src="${recipe.imageURL}" alt="${recipe.name}">
+          <h4>Ingrédients :</h4>
+          <ul>${(recipe.ingredients ?? []).map(i => `<li>${i.quantity} - ${i.name}</li>`).join('')}</ul>
+          <h4>Étapes :</h4>
+          <ol>${(recipe.steps ?? []).map(s => `<li>${s}</li>`).join('')}</ol>
+          <br>
+          <button class="validate" onclick="validate('${recipe.name}')">✅ Valider</button>
+          <button class="reject" onclick="reject('${recipe.name}')">❌ Supprimer</button>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    async function validate(name) {
+      const res = await fetch("/back/index.php?action=validate_recipe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name })
+      });
+      const result = await res.json();
+      document.getElementById("message").textContent = result.message;
+      loadPendingRecipes();
+    }
+
+    async function reject(name) {
+      const res = await fetch("/back/index.php?action=reject_recipe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name })
+      });
+      const result = await res.json();
+      document.getElementById("message").textContent = result.message;
+      loadPendingRecipes();
+    }
+
+    loadPendingRecipes();
+  </script>
+</body>
+</html>

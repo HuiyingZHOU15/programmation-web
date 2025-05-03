@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Ajouter une recette</title>
+  <link rel="stylesheet" href="../assets/css/style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      font-family: 'Open Sans', sans-serif;
+      margin: 0;
+      padding: 0;
+      background: url('https://images.unsplash.com/photo-1604908177225-6c054a305a2b?auto=format&fit=crop&w=1950&q=80') no-repeat center center fixed;
+      background-size: cover;
+      color: #fff;
+    }
+
+    .overlay {
+      background-color: rgba(0, 0, 0, 0.8);
+      padding: 40px;
+      border-radius: 12px;
+      max-width: 700px;
+      margin: 60px auto;
+    }
+
+    h1, h3 {
+      text-align: center;
+      color: #fff;
+    }
+
+    .input-group {
+      margin-bottom: 15px;
+    }
+
+    button {
+      margin-top: 10px;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      background-color: #ff9800;
+      color: white;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    button:hover {
+      background-color: #f57c00;
+    }
+
+    #message {
+      margin-top: 20px;
+      text-align: center;
+      font-weight: bold;
+    }
+
+    /* Déconnexion */
+    #logoutButton {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      padding: 10px 20px;
+      background-color: #e74c3c;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 🔐 Protection d'accès -->
+  <script>
+    const user = JSON.parse(sessionStorage.getItem("user"));
+    if (!user) {
+      alert("⛔ Vous devez être connecté pour accéder à cette page.");
+      window.location.href = "/front/auth/login.html";
+    }
+  </script>
+
+  <!-- Bouton Déconnexion -->
+  <button id="logoutButton">Déconnexion</button>
+
+  <div class="overlay">
+    <h1>🍳 Ajouter une nouvelle recette</h1>
+
+    <form id="recipe-form" class="dark">
+      <div class="input-group">
+        <label for="name">Nom de la recette :</label>
+        <input type="text" id="name" required>
+      </div>
+
+      <div class="input-group">
+        <label for="types">Type(s) de recette :</label>
+        <select id="types" multiple>
+          <option value="Vegan">Vegan</option>
+          <option value="NoGluten">Sans gluten</option>
+          <option value="Vegetarian">Végétarien</option>
+        </select>
+      </div>
+
+      <div class="input-group">
+        <label for="images">Images (URL, une par ligne) :</label>
+        <textarea id="images" placeholder="https://exemple.com/image1.jpg&#10;https://exemple.com/image2.jpg"></textarea>
+      </div>
+
+      <div class="input-group">
+        <label for="mainImage">Image principale :</label>
+        <input type="text" id="mainImage" placeholder="URL de l'image principale">
+      </div>
+
+      <h3>🧂 Ingrédients</h3>
+      <div id="ingredients"></div>
+      <button type="button" onclick="addIngredient()">+ Ajouter ingrédient</button>
+
+      <h3>👣 Étapes</h3>
+      <div id="steps"></div>
+      <button type="button" onclick="addStep()">+ Ajouter étape</button>
+
+      <button type="submit">✅ Ajouter la recette</button>
+    </form>
+
+    <p id="message"></p>
+  </div>
+
+  <script>
+    function addIngredient() {
+      const div = document.createElement('div');
+      div.classList.add('input-group');
+      div.innerHTML = `
+        <input type="text" placeholder="Quantité" class="ing-qty">
+        <input type="text" placeholder="Nom de l'ingrédient" class="ing-name">
+      `;
+      document.getElementById('ingredients').appendChild(div);
+    }
+
+    function addStep() {
+      const div = document.createElement('div');
+      div.classList.add('input-group');
+      div.innerHTML = `<textarea placeholder="Étape" class="step"></textarea>`;
+      document.getElementById('steps').appendChild(div);
+    }
+
+    document.getElementById("recipe-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const name = document.getElementById("name").value.trim();
+      const mainImage = document.getElementById("mainImage").value.trim();
+      const images = document.getElementById("images").value.trim().split("\n").filter(line => line.trim() !== "");
+      const without = Array.from(document.getElementById("types").selectedOptions).map(opt => opt.value);
+
+      const ingredients = Array.from(document.querySelectorAll(".ing-qty")).map((input, i) => ({
+        quantity: input.value,
+        name: document.querySelectorAll(".ing-name")[i].value
+      }));
+
+      const steps = Array.from(document.querySelectorAll(".step")).map(t => t.value);
+
+      const user = JSON.parse(sessionStorage.getItem("user"));
+      const author = user?.username || "Inconnu";
+
+      const recipe = {
+        name,
+        Author: author,
+        imageURL: mainImage,
+        otherImages: images,
+        Without: without,
+        ingredients,
+        steps,
+        validated: false
+      };
+
+      const res = await fetch("/back/index.php?action=add_recipe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(recipe)
+      });
+
+      const result = await res.json();
+      const msg = document.getElementById("message");
+
+      if (result.success) {
+        msg.textContent = "✅ Recette ajoutée avec succès !";
+        msg.style.color = "lightgreen";
+        e.target.reset();
+        document.getElementById("ingredients").innerHTML = "";
+        document.getElementById("steps").innerHTML = "";
+        addIngredient();
+        addStep();
+      } else {
+        msg.textContent = result.message;
+        msg.style.color = "red";
+      }
+    });
+
+    addIngredient();
+    addStep();
+  </script>
+
+  <!-- Script de déconnexion -->
+  <script>
+    document.getElementById("logoutButton").addEventListener("click", () => {
+      sessionStorage.removeItem("user");
+      window.location.href = "/front/auth/login.html";
+    });
+  </script>
+
+</body>
+</html>

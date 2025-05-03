@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Détail de la recette</title>
+  <link rel="stylesheet" href="./assets/css/style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans&display=swap" rel="stylesheet" />
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+  <style>
+    body {
+      font-family: 'Open Sans', sans-serif;
+      margin: 0;
+      padding: 40px;
+      background: url('https://images.unsplash.com/photo-1605478371338-40896d419a6b?auto=format&fit=crop&w=1920&q=80') no-repeat center center fixed;
+      background-size: cover;
+      color: #fff;
+    }
+
+    .container {
+      background-color: rgba(0, 0, 0, 0.75);
+      max-width: 900px;
+      margin: auto;
+      padding: 40px;
+      border-radius: 16px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.5);
+    }
+
+    h1 {
+      text-align: center;
+      color: #ffcc00;
+      margin-bottom: 20px;
+    }
+
+    .recipe-detail img {
+      max-width: 100%;
+      border-radius: 12px;
+      margin: 20px 0;
+    }
+
+    h3 {
+      color: #ffcc66;
+      margin-top: 30px;
+    }
+
+    ul, ol {
+      padding-left: 20px;
+    }
+
+    a {
+      display: inline-block;
+      margin-top: 30px;
+      color: #ccc;
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+      color: white;
+    }
+
+    button {
+      background-color: #f06292;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 10px 15px;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 15px;
+    }
+
+    button:hover {
+      background-color: #ec407a;
+    }
+
+    textarea {
+      width: 100%;
+      padding: 10px;
+      margin-top: 10px;
+      border-radius: 6px;
+      border: none;
+      resize: vertical;
+    }
+
+    #like-count {
+      margin-top: 10px;
+      font-weight: bold;
+      color: #99ffcc;
+    }
+
+    ul.comments li {
+      margin-bottom: 10px;
+      background: rgba(255, 255, 255, 0.05);
+      padding: 10px;
+      border-radius: 6px;
+      list-style: none;
+    }
+
+    ul.comments li strong {
+      color: #ffd700;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1 id="recipe-title">Chargement...</h1>
+    <div id="recipe-detail" class="recipe-detail"></div>
+  </div>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const recipeName = decodeURIComponent(params.get("id"));
+    const user = JSON.parse(sessionStorage.getItem("user") || null);
+
+    // 🔄 Chargement de la recette depuis le fichier JSON
+    $.ajax({
+      url: "/back/data/recipes.json",
+      method: "GET",
+      dataType: "json",
+      success: function (recipes) {
+        const recipe = recipes.find(r => r.name === recipeName);
+        if (!recipe) {
+          $("#recipe-title").text("Recette introuvable");
+          return;
+        }
+
+        $("#recipe-title").text(recipe.nameFR || recipe.name);
+
+        const container = $("#recipe-detail");
+        container.html(`
+          <img src="${recipe.imageURL}" alt="${recipe.name}">
+          <p><strong>Auteur :</strong> ${recipe.Author ?? "Inconnu"}</p>
+
+          <h3>Ingrédients :</h3>
+          <ul>${(recipe.ingredients ?? []).map(ing => `<li>${ing.quantity} - ${ing.name}</li>`).join('')}</ul>
+
+          <h3>Étapes :</h3>
+          <ol>${(recipe.steps ?? []).map(step => `<li>${step}</li>`).join('')}</ol>
+
+          <a href="recipes.html">← Retour aux recettes</a>
+        `);
+
+        // ❤️ Bouton "like"
+        let hasLiked = user?.likes?.includes(recipe.name);
+        container.append(`
+          <button id="like-btn">${hasLiked ? '💔 Retirer le like' : '❤️ Liker cette recette'}</button>
+          <p id="like-count">Chargement des likes...</p>
+        `);
+
+        // 🔢 Charger le nombre de likes
+        $.ajax({
+          url: "/back/index.php?action=count_likes",
+          method: "POST",
+          contentType: "application/json",
+          data: JSON.stringify({ name: recipe.name }),
+          success: function (data) {
+            $("#like-count").text(`❤️ ${data.count} like(s)`);
+          }
+        });
+
+        // 💔❤️ Like / Unlike toggle
+        $("#like-btn").on("click", function () {
+          if (!user) return alert("Vous devez être connecté pour liker.");
+
+          $.ajax({
+            url: "/back/index.php?action=toggle_like",
+            method: "POST",
+            contentType: "application/json",
+            data: JSON.stringify({ username: user.username, recipe: recipe.name }),
+            success: function (result) {
+              alert(result.message);
+              location.reload();
+            }
+          });
+        });
+
+        // 💬 Affichage des commentaires
+        const commentSection = $("<div><h3>Commentaires :</h3></div>");
+
+        if ((recipe.comments ?? []).length === 0) {
+          commentSection.append("<p>Aucun commentaire pour le moment.</p>");
+        } else {
+          const list = $("<ul class='comments'></ul>");
+          recipe.comments.forEach(c => {
+            list.append(`<li><strong>${c.author}</strong> (${c.date}) : ${c.text}</li>`);
+          });
+          commentSection.append(list);
+        }
+
+        container.append(commentSection);
+
+        // 📝 Formulaire d’ajout de commentaire
+        if (user) {
+          const form = $(`
+            <form>
+              <h4>Ajouter un commentaire :</h4>
+              <textarea id="comment-text" rows="4" required></textarea><br>
+              <button type="submit">💬 Publier</button>
+            </form>
+          `);
+
+          form.on("submit", function (e) {
+            e.preventDefault();
+            const text = $("#comment-text").val().trim();
+            if (!text) return;
+
+            $.ajax({
+              url: "/back/index.php?action=add_comment",
+              method: "POST",
+              contentType: "application/json",
+              data: JSON.stringify({
+                recipe: recipe.name,
+                author: user.username,
+                text
+              }),
+              success: function (result) {
+                alert(result.message);
+                location.reload();
+              }
+            });
+          });
+
+          container.append(form);
+        }
+      },
+      error: function () {
+        $("#recipe-title").text("Erreur de chargement de la recette.");
+      }
+    });
+  </script>
+</body>
+</html>

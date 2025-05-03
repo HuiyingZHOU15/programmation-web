@@ -1,0 +1,213 @@
+[
+    {
+        "username": "John",
+        "password": "azerty",
+        "roles": [
+            "Cuisinier",
+            "Traducteur"
+        ],
+        "demandeRoles": [],
+        "likes": [
+            "Pizza test"
+        ],
+        "photos": [],
+        "comments": []
+    },
+    {
+        "username": "mimo",
+        "password": "mimo2003",
+        "roles": [
+            "Cuisinier",
+            "Traducteur"
+        ],
+        "demandeRoles": [],
+        "likes": [],
+        "photos": [],
+        "comments": []
+    },
+    {
+        "username": "admin",
+        "password": "azerty",
+        "roles": [
+            "Admin"
+        ],
+        "demandeRoles": [],
+        "likes": [
+            "Crock Pot Roast"
+        ],
+        "photos": [],
+        "comments": []
+    },
+    {
+        "username": "chef",
+        "password": "azerty",
+        "roles": [
+            "Cuisinier"
+        ],
+        "demandeRoles": [],
+        "likes": [],
+        "photos": [],
+        "comments": []
+    },
+    {
+        "username": "trad",
+        "password": "azerty",
+        "roles": [
+            "Traducteur"
+        ],
+        "demandeRoles": [],
+        "likes": [],
+        "photos": [],
+        "comments": []
+    },
+    {
+        "username": "simple",
+        "password": "azerty",
+        "roles": [],
+        "demandeRoles": [],
+        "likes": [],
+        "photos": [],
+        "comments": []
+    },
+    {
+        "username": "testuser",
+        "password": "azerty",
+        "roles": [
+            "Cuisinier"
+        ],
+        "demandeRoles": [],
+        "likes": [],
+        "photos": [],
+        "comments": []
+    },
+    {
+        "username": "ranya",
+        "password": "ranya2003",
+        "roles": [
+            "Cuisinier"
+        ],
+        "demandeRoles": [],
+        "likes": [],
+        "photos": [],
+        "comments": []
+    },
+    {
+        "username": "huiying",
+        "password": "121525",
+        "roles": [
+            "Cuisinier"
+        ],
+        "demandeRoles": [],
+        "likes": [
+            "Crock Pot Roast",
+            "Roasted Asparagus"
+        ],
+        "photos": [],
+        "comments": []
+    },
+    {
+        "username": "traduit",
+        "password": "12345",
+        "roles": [
+            "Cuisinier"
+        ],
+        "demandeRoles": [],
+        "likes": [],
+        "photos": [],
+        "comments": []
+    },
+    {
+        "username": "racim",
+        "password": "mimo2003",
+        "roles": [
+            "Cuisinier",
+            "Traducteur"
+        ],
+        "demandeRoles": [],
+        "likes": [],
+        "photos": [],
+        "comments": []
+    },
+    {
+        "username": "ella",
+        "password": "121525",
+        "roles": [
+            "Cuisinier"
+        ],
+        "demandeRoles": [],
+        "likes": [],
+        "photos": [],
+        "comments": []
+    },
+    {
+        "username": "huiying2",
+        "password": "12345",
+        "roles": [
+            "Cuisinier"
+        ],
+        "demandeRoles": [],
+        "likes": [],
+        "photos": [],
+        "comments": []
+    },
+    {
+        "username": "huiying3",
+        "password": "12345",
+        "roles": [
+            "Cuisinier"
+        ],
+        "demandeRoles": [],
+        "likes": [],
+        "photos": [],
+        "comments": []
+    },
+    {
+        "username": "huiying4",
+        "password": "121525",
+        "roles": [
+            "Cuisinier"
+        ],
+        "demandeRoles": [],
+        "likes": [],
+        "photos": [],
+        "comments": []
+    },
+    {
+        "username": "huiying5",
+        "password": "121525",
+        "roles": [
+            "Cuisinier",
+            "Chef",
+            "Traducteur"
+        ],
+        "demandeRoles": [],
+        "likes": [],
+        "photos": [],
+        "comments": []
+    },
+    {
+        "username": "huiying6",
+        "password": "121525",
+        "roles": [
+            "Cuisinier"
+        ],
+        "demandeRoles": [],
+        "likes": [
+            "Curried Lentils and Rice",
+            "Roasted Asparagus"
+        ],
+        "photos": [],
+        "comments": []
+    },
+    {
+        "username": "loser",
+        "password": "12345",
+        "roles": [
+            "Cuisinier"
+        ],
+        "demandeRoles": [],
+        "likes": [],
+        "photos": [],
+        "comments": []
+    }
+]
